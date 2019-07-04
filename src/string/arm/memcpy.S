@@ -189,8 +189,12 @@ less_than_32_left:
 
 	/* we're done! restore everything and return */
 1:      ldmfd   sp!, {r5-r11}
+#if defined(__ARM_ARCH_4T__)
 	ldmfd   sp!, {r0, r4, lr}
 	bx      lr
+#else
+	ldmfd   sp!, {r0, r4, pc}
+#endif
 
 	/********************************************************************/
 
@@ -474,6 +478,10 @@ copy_last_3_and_return:
 
 	/* we're done! restore sp and spilled registers and return */
 	add     sp,  sp, #28
+#if defined(__ARM_ARCH_4T__)
 	ldmfd   sp!, {r0, r4, lr}
 	bx      lr
+#else
+	ldmfd   sp!, {r0, r4, pc}
+#endif
 
