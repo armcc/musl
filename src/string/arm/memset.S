@@ -26,10 +26,11 @@
 	.type memset,%function
 
 memset:
-	cmp	r2, #8
+	cmp	r2, #16
 	mov	r3, r0
-	bcc	2f		@ less than 8 bytes to set
+	bcc	2f		@ less than 16 bytes to set
 
+	push	{ r4, r5 }
 	and	r1, r1, #255	@ clear any sign bits
 
 1:
@@ -40,26 +41,23 @@ memset:
 
 	orr	r1, r1, r1, lsl #8
 	orr	r1, r1, r1, lsl #16
+	mov	r4, r1
+	mov	r5, r1
 	mov	ip, r1
 
 1:
-	subs	r2, r2, #8
-	stmiacs	r3!, {r1, ip}	@ store up to 32 bytes per loop iteration
-	subscs	r2, r2, #8
-	stmiacs	r3!, {r1, ip}
-	subscs	r2, r2, #8
-	stmiacs	r3!, {r1, ip}
-	subscs	r2, r2, #8
-	stmiacs	r3!, {r1, ip}
+	subs	r2, r2, #16
+	stmiacs	r3!, {r1, r4, r5, ip}
+	subscs	r2, r2, #16
+	stmiacs	r3!, {r1, r4, r5, ip}
 	bcs	1b
 
-	add	r2, r2, #8
+	add	r2, r2, #16
+
+	pop	{ r4, r5 }
+
 2:
-	subs	r2, r2, #1	@ store up to 4 bytes per loop iteration
-	strbcs	r1, [r3], #1
-	subscs	r2, r2, #1
-	strbcs	r1, [r3], #1
-	subscs	r2, r2, #1
+	subs	r2, r2, #1
 	strbcs	r1, [r3], #1
 	subscs	r2, r2, #1
 	strbcs	r1, [r3], #1
