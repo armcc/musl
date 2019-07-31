@@ -26,42 +26,41 @@
 	.type memset,%function
 
 memset:
-	cmp	r2, #16
-	mov	r3, r0
-	bcc	2f		@ less than 16 bytes to set
 
-	push	{ r4, r5 }
-	and	r1, r1, #255	@ clear any sign bits
+	push		{ r0, r4 }
 
-1:
-	tst	r3, #3		@ aligned yet?
-	strbne	r1, [r3], #1
-	subne	r2, r2, #1
-	bne	1b
+	rsb		r3, r0, #0		@ alignment bytes = ((0 - dst) & 0x03)
+	and		r1, r1, #255
+	and		r3, r3, #3
+	orr		r1, r1, r1, lsl #8
+	cmp		r3, r2			@ if alignment bytes > count, then alignment bytes = count
+	movhi		r3, r2
 
-	orr	r1, r1, r1, lsl #8
-	orr	r1, r1, r1, lsl #16
-	mov	r4, r1
-	mov	r5, r1
-	mov	ip, r1
+	movs		r4, r3, lsl #31
+	strbmi		r1, [r0], #1
+	strhcs		r1, [r0], #2
+	subs		r2, r2, r3		@ count -= alignment bytes
+	beq		2f
 
-1:
-	subs	r2, r2, #16
-	stmiacs	r3!, {r1, r4, r5, ip}
-	subscs	r2, r2, #16
-	stmiacs	r3!, {r1, r4, r5, ip}
-	bcs	1b
+	orr		r1, r1, r1, lsl #16
+	mov		r3, r1
+	mov		r4, r1
+	mov		r12, r1
 
-	add	r2, r2, #16
+1:	subs		r2, r2, #16
+	stmiacs		r0!, { r1, r3, r4, r12 }
+	subscs		r2, r2, #16
+	stmiacs		r0!, { r1, r3, r4, r12 }
+	bcs		1b
 
-	pop	{ r4, r5 }
+	movs		r2, r2, lsl #29		@ upto 15 bytes remaining, dst is aligned
+	stmiacs		r0!, { r1, r3 }
+	strmi		r1, [r0], #4
 
-2:
-	subs	r2, r2, #1
-	strbcs	r1, [r3], #1
-	subscs	r2, r2, #1
-	strbcs	r1, [r3], #1
-	bcs	2b
+	movs		r2, r2, lsl #2
+	strhcs		r1, [r0], #2
+	strbmi		r1, [r0], #1
 
-	bx	lr
+2:	pop		{ r0, r4 }
 
+	bx		lr
