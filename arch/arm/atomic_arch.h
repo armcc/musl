@@ -35,6 +35,14 @@ static inline void a_barrier()
 	__asm__ __volatile__ ("dmb ish" : : : "memory");
 }
 
+#else
+
+#define a_barrier a_barrier
+static inline void a_barrier()
+{
+	__asm__ __volatile__ ("mcr p15,0,%0,c7,c10,5" : : "r"(0) : "memory");
+}
+
 #endif
 
 #define a_pre_llsc a_barrier
